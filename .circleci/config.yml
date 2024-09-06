@@ -1,0 +1,118 @@
+version: 2.1
+
+commands:
+  generate_deploy_info:
+    steps:
+      - run:
+          name: Get Image Tag and Version
+          command: |
+            VERSION=$(cat version)
+
+            # Extract the minor version number (assuming it follows the format "vX.Y")
+            minor_version=$(echo "$VERSION" | cut -d '.' -f2)
+
+            TAG=purple
+
+            # if minor_version is even use the image tag green
+            # this is to better visualize the deployment process
+            if ((minor_version % 2 == 1)); then
+                TAG="green"
+            fi
+
+            echo "export VERSION='$VERSION'" >> deploy.env
+            echo "export TAG='$TAG'" >> deploy.env
+
+  load_deploy_info:
+    steps:
+      - run:
+          name: Load deploy info
+          command: |
+            cat deploy.env >> $BASH_ENV
+
+orbs:
+  kubernetes: circleci/kubernetes@1.3.1
+  helm: circleci/helm@3.0.2
+  aws-cli: circleci/aws-cli@4.1.3
+
+jobs:
+  # example jobs of a real application
+  #
+  # lint:
+  #   machine:
+  #     image: ubuntu-2004:2024.04.4
+  #   steps:
+  #     - checkout
+  #     - run: make lint
+  # test:
+  #   machine:
+  #     image: ubuntu-2004:2024.04.4
+  #   steps:
+  #     - checkout
+  #     - run: make unit-test
+  #     - run: make integration-test
+  # build:
+  #   machine:
+  #     image: ubuntu-2004:2024.04.4
+  #   steps:
+  #     - checkout
+  #     - run: make buid-docker
+  deploy:
+    machine:
+      image: ubuntu-2004:2024.04.4
+    # remember to add your credentials on Project Settings > Environment Variables so the kubectl client can authenticate with the
+    # server. In our case let's assume we are using AWS. So add static credentials AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+    # environment variables or if prefer a more secure approach use the OpenID Connect flow highlited here https://circleci.com/docs/openid-connect-tokens
+    steps:
+      - checkout
+      - generate_deploy_info # generate the version from the version file in the repo and generate the next tag for our demo docker iamge
+      - load_deploy_info # load the information in the current bash
+      - run:
+          name: validate-manifiest
+          command: |
+            wget https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64 -O yq
+            printf '%s\n' "6dc2d0cd4e0caca5aeffd0d784a48263591080e4a0895abe69f3a76eb50d1ba3  yq" | sha256sum -c -
+            sudo mv yq /usr/local/bin && chmod 755 /usr/local/bin/yq
+
+            ./scripts/check_deploy_rollout.sh ./examples/helm/k8s_deployment/templates/deployment.yaml
+      - run:
+          name: render-manifest
+          command: |
+            mv ./examples/helm/k8s_deployment/values.yaml ./examples/helm/k8s_deployment/values-tmp.yaml
+            envsubst < ./examples/helm/k8s_deployment/values-tmp.yaml >> ./examples/helm/k8s_deployment/values.yaml
+      # this step is not added in other examples which assume reliance on static credentials
+      # AWS_OIDC_ROLE and AWS_REGION are CircleCI environment variables added in the project settings
+      # ref: https://circleci.com/blog/openid-connect-identity-tokens
+      - aws-cli/setup:
+          role_arn: $AWS_OIDC_ROLE
+          region: $AWS_REGION
+          role_session_name: "cci-k8s-deploy-example"
+          session_duration: "1800"
+      - kubernetes/install-kubeconfig:
+          kubeconfig: KUBECONFIG_DATA # Add the base64-encoded kubeconfig in Project Settings > Environment Variables
+      - helm/install_helm_client
+      - run:
+          name: install-chart
+          command: |
+            helm upgrade --namespace cci-k8s-agent-demo --create-namespace --install helm-cci-deploy-demo ./examples/helm/k8s_deployment
+workflows:
+  test-build-deploy:
+    jobs:
+      - deploy:
+          filters:
+            branches:
+              only:
+                - main
+    # # example workflow of a real application
+    #   - lint
+    #   - test
+    #   - build:
+    #       requires:
+    #         - lint
+    #         - test
+    #   - hold: # optionally create an approval step before deploying
+    #       type: approval
+    #       requires:
+    #         - build
+    #   - deploy:
+    #       requires:
+    #         - hold

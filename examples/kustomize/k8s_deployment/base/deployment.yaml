@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cci-deploy-kustomize-demo
+  annotations:
+    # optional fields to track the deployment triggers in the dashboard
+    # you need all 3 to effectively display the deployment trigger in the UI
+    circleci.com/pipeline-id: id
+    circleci.com/workflow-id: id
+    circleci.com/job-number: "num"
+    # mandatory field, with this CircleCI can safely start tracking his component and make sure that only people authorized to use
+    # this project can do operations over it on the CircleCI release dashboard like rollback, scale, restart. etc.
+    # project ID maps with the git repository linked
+    circleci.com/project-id: "id"
+  labels:
+    # mandatory labels for CircleCI k8s release agent to identify the component and start tracking events
+    #
+    # you can also use common `app`` and `version` labels
+    # app: cci-deploy-kustomize-demo
+    # version: <<version>>
+    circleci.com/component-name: cci-deploy-kustomize-demo
+    circleci.com/version: version
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      circleci.com/component-name: cci-deploy-kustomize-demo
+  template:
+    metadata:
+      labels:
+        # it is important to place these labels here as well so they 
+        # can be propagated to child objects like replicasets and pods
+        # remeber you can also use common `app` and `version` labels here.
+        circleci.com/component-name: cci-deploy-kustomize-demo
+        circleci.com/version: version
+    spec:
+      containers:
+        - image: argoproj/rollouts-demo:tag
+          imagePullPolicy: Always
+          name: color-demo

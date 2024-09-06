@@ -1,0 +1,8 @@
+version: ${VERSION}
+componentName: helm-cci-deploy-demo
+replicas: 2
+pipelineId: ${CIRCLE_PIPELINE_ID}
+workflowId: ${CIRCLE_WORKFLOW_ID}
+projectId: ${CIRCLE_PROJECT_ID}
+jobNumber: ${CIRCLE_BUILD_NUM}
+tag: ${TAG}

@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: cci-kustomize-rollout-demo
+  annotations:
+    circleci.com/pipeline-id: ${CIRCLE_PIPELINE_ID}
+    circleci.com/workflow-id: ${CIRCLE_WORKFLOW_ID}
+    circleci.com/job-number: "${CIRCLE_BUILD_NUM}"
+    circleci.com/project-id: ${CIRCLE_PROJECT_ID}
+  labels:
+    circleci.com/version: ${VERSION}
+spec:
+  template:
+    metadata:
+      labels:
+        circleci.com/version: ${VERSION}
+    spec:
+      containers:
+        - image: argoproj/rollouts-demo:${TAG}
+          imagePullPolicy: Always
+          name: color-demo
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 5m
+          ports:
+            - containerPort: 8080
+              protocol: TCP

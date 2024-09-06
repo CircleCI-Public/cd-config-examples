@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+  annotations:
+    # optional: if it is desired to use rollback functionality from the UI better to
+    # include this annotation to make it work.
+    circleci.com/helm-revision-number: {{ .Release.Revision | quote }}
+    # optional: added to set a max time to process commands like helm rollback.
+    circleci.com/operation-timeout: 10m
+    # optional fields to track the deployment triggers in the dashboard
+    # you need all 3 to effectively display the deployment trigger in the UI
+    circleci.com/pipeline-id: {{ .Values.pipelineId | quote }}
+    circleci.com/workflow-id: {{ .Values.workflowId | quote }}
+    circleci.com/job-number: {{ .Values.jobNumber | quote }}
+    # mandatory field, with this CircleCI can safely start tracking his component and make sure that only people authorized to use
+    # this project can do operations over it on the CircleCI release dashboard like rollback, scale, restart. etc.
+    # project ID maps with the git repository linked
+    circleci.com/project-id: {{ .Values.projectId | quote }}
+  labels:
+    # mandatory labels for CircleCI k8s release agent to identify the component and start tracking events
+    #
+    # you can also use common `app`` and `version` labels
+    # app: {{ .Values.componentName }}
+    # version: {{ .Values.version }}
+    circleci.com/component-name: {{ .Values.componentName | quote }}
+    circleci.com/version: {{ .Values.version | quote }}
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      circleci.com/component-name: {{ .Values.componentName | quote }}
+  template:
+    metadata:
+      labels:
+        # it is important to place these labels here as well so they 
+        # can be propagated to child objects like replicasets and pods
+        # remeber you can also use common `app` and `version` labels here.
+        circleci.com/component-name: {{ .Values.componentName | quote }}
+        circleci.com/version: {{ .Values.version | quote }}
+    spec:
+      containers:
+        - image: argoproj/rollouts-demo:{{ .Values.tag }}
+          imagePullPolicy: Always
+          name: color-demo
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 5m
+          ports:
+            - containerPort: 8080
+              protocol: TCP

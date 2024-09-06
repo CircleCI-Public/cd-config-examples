@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cci-rollout-demo
+  labels:
+    circleci.com/component-name: cci-rollout-demo
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    # you can also use common app label, it depends how the rollout is set up
+    # app: cci-rollout-demo
+    circleci.com/component-name: cci-rollout-demo

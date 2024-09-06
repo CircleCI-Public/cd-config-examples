@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cci-deploy-demo
+  annotations:
+    circleci.com/pipeline-id: b23cfab9-53d0-400c-947c-2748406ddb3d
+    circleci.com/workflow-id: b23cfab9-53d0-400c-947c-2748406ddb3d
+    circleci.com/job-number: "1"
+    circleci.com/project-id: b23cfab9-53d0-400c-947c-2748406ddb3d
+  labels:
+    circleci.com/component-name: cci-deploy-demo
+    circleci.com/version: v1.0
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      circleci.com/component-name: cci-deploy-demo
+  template:
+    metadata:
+      labels:
+        some-label: label
+    spec:
+      containers:
+        - image: argoproj/rollouts-demo:purple
+          imagePullPolicy: Always
+          name: color-demo
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 5m
+          ports:
+            - containerPort: 8080
+              protocol: TCP

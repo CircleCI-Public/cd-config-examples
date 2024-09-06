@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cci-rollout-demo
+  labels:
+    circleci.com/component-name: cci-deploy-demo
+spec:
+  ingressClassName: nginx
+  rules:
+    # host: domain.foo.org add a host if you want to test
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cci-rollout-demo
+            port:
+              number: 80

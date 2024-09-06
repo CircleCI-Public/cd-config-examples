@@ -1,0 +1,6 @@
+apiVersion: v2
+name: helm-cci-deploy-demo
+description: CircleCI example of deployment using Helm
+type: application
+version: 1.0.0
+appVersion: 1.0.0
