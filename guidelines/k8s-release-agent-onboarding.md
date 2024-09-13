@@ -1,12 +1,13 @@
 # CircleCI Release Agent Onboarding
 
-This guideline provides instructions on installing the CircleCI Release Agent. It provides guidance on
+This guideline provides instructions on installing the CircleCI release agent. The following subjects are covered:
 
-- Onboarding and deploying Kubernetes workloads via CircleCI or locally,
-- Utilizing tools such as the Kubernetes Client, Kustomize, or Helm.
-- Utilizing the CircleCI Release Agent where the deployment process does not occur through CircleCI.
+- Onboarding and deploying Kubernetes workloads via CircleCI or locally.
+- Using tools such as the Kubernetes Client, Kustomize, or Helm.
+- Using the CircleCI release agent when deployment is not through CircleCI.
 
-_Note: The CircleCI Release Agent is a paid product with a free tier. For pricing details, refer to our [pricing page](https://circleci.com/pricing) or the breakdown explanation provided [here](https://support.circleci.com/hc/en-us/articles/26787303887131-Understanding-CircleCI-s-Releases-Pricing)_.
+> [!NOTE]
+> The CircleCI Release Agent is a paid product with a free tier. For pricing details, refer to our [pricing page](https://circleci.com/pricing) or the breakdown explanation provided [here](https://support.circleci.com/hc/en-us/articles/26787303887131-Understanding-CircleCI-s-Releases-Pricing).!
 
 ## Table of contents
 
@@ -63,7 +64,7 @@ Organizations can enhance security through the integration of the CircleCI Relea
 _All of the above controls are available in the CircleCI releases dashboard web UI._
 
 ### How CircleCI and the Release agent can reduce the impact of incidents?
-  
+
 The CircleCI Release Agent has demonstrated value both for internal development teams at CircleCI and for external CircleCI customers during incidents:
 
 - Its visibility allows quickly getting a view of what has changed recently within the environment.
@@ -79,7 +80,7 @@ The CircleCI Release Agent has demonstrated value both for internal development 
   - Create an Environment Integration [here](https://app.circleci.com/releases). Ensure you are in your desired organization for this task.
 
     - if you are redirected to the home page, select your desired organization and navigate to Releases from the left sidebar navigation menu.
-  
+
   - After creation, you will land on an onboarding page: `CircleCI Environment Setup: Kubernetes Cluster`.
   - Expand the step `Install CircleCI's Release Agent`.
   - Note down the value of the `tokenSecret.token` from the command in this step in a safe place. This is your Integration Token.
@@ -163,7 +164,7 @@ Use the command below to replace placeholders in the example Kubernetes manifest
     ```bash
     docker run -e CIRCLE_PROJECT_ID="USE-REAL-PROJECT-ID" -e VERSION=$(cat version) -e TAG="green" \
     -v $(PWD)/examples/k8s_cli/k8s_deployment:/manifests --rm alpine:latest /bin/sh -c "apk add --no-cache gettext && \
-    rm -f /manifests/manifest-rendered.yaml 
+    rm -f /manifests/manifest-rendered.yaml
     envsubst < /manifests/deployment.yaml >> /manifests/manifest-rendered.yaml && echo "---" >>  /manifests/manifest-rendered.yaml && \
     envsubst < /manifests/service.yaml >> /manifests/manifest-rendered.yaml && echo "---" >>  /manifests/manifest-rendered.yaml && \
     envsubst < /manifests/ingress.yaml >> /manifests/manifest-rendered.yaml \
@@ -175,7 +176,7 @@ Use the command below to replace placeholders in the example Kubernetes manifest
     ```bash
     docker run -e CIRCLE_PROJECT_ID="USE-REAL-PROJECT-ID" -e VERSION=$(Get-Content -Path version) -e TAG="green" `
     -v ${PWD}/examples/k8s_cli/k8s_deployment:/manifests --rm alpine:latest /bin/sh -c "apk add --no-cache gettext && \
-    rm -f /manifests/manifest-rendered.yaml 
+    rm -f /manifests/manifest-rendered.yaml
     envsubst < /manifests/deployment.yaml >> /manifests/manifest-rendered.yaml && echo "---" >>  /manifests/manifest-rendered.yaml && \
     envsubst < /manifests/service.yaml >> /manifests/manifest-rendered.yaml && echo "---" >>  /manifests/manifest-rendered.yaml && \
     envsubst < /manifests/ingress.yaml >> /manifests/manifest-rendered.yaml \
@@ -220,7 +221,7 @@ If you use CircleCI as your CI platform but your deployments are managed outside
 ## Debug the Release Agent
 
 - Change the log level `kubectl patch configmap cci-release-agent-circleci-release-agent -n circleci-release-agent-system  -p '{"data": {"LOG_LEVEL": "DEBUG"}}'` the default level is ERROR.
-  
+
 - Restart the agent `kubectl rollout restart deployment cci-release-agent-circleci-release-agent -n circleci-release-agent-system`
 
 - Deploy a kubernetes workload in one of the managed namespaces by the Release Agent
