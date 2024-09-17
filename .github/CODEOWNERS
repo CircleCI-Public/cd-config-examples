@@ -5,5 +5,4 @@
 # https://help.github.com/articles/about-codeowners/
 
 # Add your team name here
-* @CircleCI-Public/deploy-and-release
-* @CircleCI-Public/dre
+* @CircleCI-Public/deploy-and-release @CircleCI-Public/dre
