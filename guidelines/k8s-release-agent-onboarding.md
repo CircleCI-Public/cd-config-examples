@@ -1,6 +1,6 @@
-# CircleCI Release Agent Onboarding
+# CircleCI release agent onboarding
 
-This guideline provides instructions on installing the CircleCI release agent. The following subjects are covered:
+This guide provides instructions on installing the CircleCI release agent. The following subjects are covered:
 
 - Onboarding and deploying Kubernetes workloads via CircleCI or locally.
 - Using tools such as the Kubernetes Client, Kustomize, or Helm.
@@ -11,8 +11,6 @@ This guideline provides instructions on installing the CircleCI release agent. T
 
 ## Table of contents
 
-- [CircleCI Release Agent Onboarding](#circleci-release-agent-onboarding)
-  - [Table of contents](#table-of-contents)
   - [Key Terms](#key-terms)
   - [Benefit of using CircleCI Release Agent](#benefit-of-using-circleci-release-agent)
     - [How does the CircleCI Release Agent improve visibility?](#how-does-the-circleci-release-agent-improve-visibility)
@@ -30,40 +28,40 @@ This guideline provides instructions on installing the CircleCI release agent. T
 
 ## Key Terms
 
-- Component: A component in CircleCI is a collection of code and configuration that is deployed and released as a single unit. In Kubernetes terms, this would be a Deployment or Rollout object along with the related objects such as Pods, ReplicaSets, etc. that share a common circleci.com/project-id annotation and a circleci.com/component-name label.
+- Component: A component in CircleCI is a collection of code and configuration that is deployed and released as a single unit. In Kubernetes terms, this would be a Deployment or Rollout object along with the related objects such as Pods, ReplicaSets, etc. that share a common `circleci.com/project-id` annotation and a c`ircleci.com/component-name` label.
 
-- Project Id: In the context of this guideline, a Project ID is the unique identifier that maps a Git Repository to a CircleCI project. It is a required field in the Kubernetes workload to allow the Release Agent to accurately track each component's association with a project, ensuring that only authorized individuals can take action on the component.
+- Project ID: In the context of this guide, a Project ID is the unique identifier that maps a Git Repository to a CircleCI project. It is a required field in the Kubernetes workload to allow the release agent to accurately track each component's association with a project, ensuring that only authorized individuals can take action on the component.
 
-- CircleCI API Token vs Release Environment Integration Token: The CircleCI API token is utilized for making API calls to the CircleCI public APIs. On the other hand, the Release Environment Integration token is specifically designed for identification and communication between the Release Agent and the CircleCI cloud to monitor releases and components within your environment(s).
+- CircleCI API token vs release environment integration token: The CircleCI API token is utilized for making calls to the CircleCI public APIs. An environment integration token is specifically designed for identification and communication between the release agent and CircleCI cloud to monitor releases and components within your environment(s).
 
-- Deploy vs Release: Deployment involves updating a component's version. A Release involves directing traffic to this new version. A Release can occur either as a single step or in a staged manner, such as in a canary or blue green release strategy.
+- Deploy vs release: Deployment involves updating a component's version. A Release involves directing traffic to this new version. A Release can occur either as a single step or in a staged manner, such as in a canary or blue green release strategy.
 
-## Benefit of using CircleCI Release Agent
+## Benefits of using the CircleCI release agent
 
-The CircleCI Release Agent provides visibility into releases within your organization, assists in reducing the impact of incidents, and improves your security posture regarding access your developers may require to operate Kubernetes resources.
+The CircleCI release agent provides visibility into releases within your organization, assists in reducing the impact of incidents, and improves your security posture regarding access your developers may require to operate Kubernetes resources.
 
-### How does the CircleCI Release Agent improve visibility?
+### How does the CircleCI release agent improve visibility?
 
-The CircleCI Release Agent tracks all releases occurring in your Kubernetes cluster, providing visibility into:
+The CircleCI release agent tracks all releases occurring in your Kubernetes cluster, providing visibility into:
 
-- Deployments,
-- Historical version changes of each component, and,
-- When configured, links each release to its corresponding commit and workflow that produced it
+- Deployments.
+- Historical version changes of each component.
+- Links each release to its corresponding commit and the workflow that produced it (optional).
 
-This gives your developers an end-to-end view of the development lifecycle from repository merge to release.
+CircleCI releases gives your developers an end-to-end view of the development lifecycle from repository merge to release.
 
-### How does the CircleCI Release Agent enhance security?
+### How does the CircleCI release agent enhance security?
 
-Organizations can enhance security through the integration of the CircleCI Release Agent by providing the ability to restrict access to their Kubernetes Cluster, granting permissions only to individuals who require it. This is accomplished through robust controls that are safeguarded by permission checks, ensuring that only authorized users can utilize them. The current available controls are:
+Organizations can enhance security through the integration of the CircleCI release agent by providing the ability to restrict access to their Kubernetes Cluster, granting permissions only to individuals who require it. This is accomplished through robust controls that are safeguarded by permission checks, ensuring that only authorized users can utilize them. The current available controls are:
 
-- Version restoration (rollback),
-- Replica scaling,
-- Component restart (for Deployment and Argo Rollouts workloads), and
+- Version restoration (rollback).
+- Replica scaling.
+- Component restart (for Deployment and Argo Rollouts workloads)
 - Cancel, promote, and retry releases (for Argo Rollouts workloads)
 
 _All of the above controls are available in the CircleCI releases dashboard web UI._
 
-### How CircleCI and the Release agent can reduce the impact of incidents?
+### How CircleCI and the release agent can reduce the impact of incidents?
 
 The CircleCI Release Agent has demonstrated value both for internal development teams at CircleCI and for external CircleCI customers during incidents:
 
