@@ -7,24 +7,24 @@ This guide provides instructions on installing the CircleCI release agent. The f
 - Using the CircleCI release agent when deployment is not through CircleCI.
 
 > [!NOTE]
-> The CircleCI Release Agent is a paid product with a free tier. For pricing details, refer to our [pricing page](https://circleci.com/pricing) or the breakdown explanation provided [here](https://support.circleci.com/hc/en-us/articles/26787303887131-Understanding-CircleCI-s-Releases-Pricing).!
+> The CircleCI release agent is a paid product with a free tier. For pricing details, refer to our [pricing page](https://circleci.com/pricing) or the breakdown explanation provided [here](https://support.circleci.com/hc/en-us/articles/26787303887131-Understanding-CircleCI-s-Releases-Pricing).!
 
 ## Table of contents
 
   - [Key Terms](#key-terms)
-  - [Benefit of using CircleCI Release Agent](#benefit-of-using-circleci-release-agent)
-    - [How does the CircleCI Release Agent improve visibility?](#how-does-the-circleci-release-agent-improve-visibility)
-    - [How does the CircleCI Release Agent enhance security?](#how-does-the-circleci-release-agent-enhance-security)
-    - [How CircleCI and the Release agent can reduce the impact of incidents?](#how-circleci-and-the-release-agent-can-reduce-the-impact-of-incidents)
-  - [Install the Release Agent and onboard a component in 4 steps](#install-the-release-agent-and-onboard-a-component-in-4-steps)
+  - [Benefit of using CircleCI release agent](#benefit-of-using-circleci-release-agent)
+    - [How does the CircleCI release agent improve visibility?](#how-does-the-circleci-release-agent-improve-visibility)
+    - [How does the CircleCI release agent enhance security?](#how-does-the-circleci-release-agent-enhance-security)
+    - [How CircleCI and the release agent can reduce the impact of incidents?](#how-circleci-and-the-release-agent-can-reduce-the-impact-of-incidents)
+  - [Install the release agent and onboard a component in 4 steps](#install-the-release-agent-and-onboard-a-component-in-4-steps)
     - [Pre-requisites](#pre-requisites)
     - [1. Set up a kubernetes cluster](#1-set-up-a-kubernetes-cluster)
-    - [2. Install the CircleCI Release Agent](#2-install-the-circleci-release-agent)
+    - [2. Install the CircleCI release agent](#2-install-the-circleci-release-agent)
     - [3. Get your CircleCI Project ID](#3-get-your-circleci-project-id)
     - [4. Deploy one of the examples in this repository](#4-deploy-one-of-the-examples-in-this-repository)
     - [Setup is complete!](#setup-is-complete)
   - [Deploy via CircleCI and track every release](#deploy-via-circleci-and-track-every-release)
-  - [Debug the Release Agent](#debug-the-release-agent)
+  - [Debug the release agent](#debug-the-release-agent)
 
 ## Key Terms
 
@@ -64,13 +64,13 @@ Organizations can enhance security through the integration of the CircleCI relea
 
 ### How CircleCI and the release agent can reduce the impact of incidents?
 
-The CircleCI Release Agent has demonstrated value both for internal development teams at CircleCI and for external CircleCI customers during incidents:
+The CircleCI release agent has demonstrated value both for internal development teams at CircleCI and for external CircleCI customers during incidents:
 
 - Its visibility allows quickly getting a view of what has changed recently within the environment.
 - With common in-cluster commands, your team can quickly self-service some key actions, such as restoring the last known good version within your environment - without waiting to find someone with production cluster break-glass access.
 - Engineers are equipped with tools to swiftly investigate and rectify incidents. This significantly minimizes the Mean Time To Recover (MTTR), enhancing system uptime and reliability.
 
-## Install the Release Agent and onboard a component in 5 steps
+## Install the release agent and onboard a component in 5 steps
 
 ### Pre-requisites
 
@@ -108,7 +108,7 @@ powershell -File ".\scripts\setup_local_cluster.ps1" -op "setup-local-cluster"
 - Give your environment integration a name and description (optional) and make sure "Kubernetes Cluster" is selected under **Type**.
 - After creation, you will land on an onboarding page: `CircleCI Environment Setup: Kubernetes Cluster`. Follow the steps in the releases UI until you have installed the release agent into your cluster and you see a green "ONLINE" badge.
 
-_See all options for installing the CircleCI Release Agent [here](https://circleci-public.github.io/cci-k8s-release-agent)._
+_See all options for installing the CircleCI release agent [here](https://circleci-public.github.io/cci-k8s-release-agent)._
 
 ### 3. Get your CircleCI Project ID
 
@@ -165,7 +165,7 @@ Use the command below to replace placeholders in the example Kubernetes manifest
 
 ### Setup is complete!
 
-- View the CircleCI [Releases Dashboard](https://app.circleci.com/releases) to see the release created by the Release Agent.
+- View the CircleCI [Releases Dashboard](https://app.circleci.com/releases) to see the release created by the release agent.
 - To simulate the release process of a component, update the [version file](../version) in this repository and repeat all commands in [step 4](#4-deploy-one-of-the-examples-in-this-repository)
 - Once you are done with your local cluster, clean up everything by running
 
@@ -181,7 +181,7 @@ Use the command below to replace placeholders in the example Kubernetes manifest
 
 If you are interested in how to build and deploy your application in an automated fashion using within CircleCI while tracking every release in your system, review the following guidelines:
 
-Note: remember that you need a kubernetes cluster accessible from the internet to install the [Release Agent](https://circleci-public.github.io/cci-k8s-release-agent)
+Note: remember that you need a kubernetes cluster accessible from the internet to install the [release agent](https://circleci-public.github.io/cci-k8s-release-agent)
 
 - [Deploy a Deployment workload using Kubectl](../docs/cci_deploy/deployment_kubectl.md)
 - [Deploy an Argo Rollouts workload using Kubectl](../docs/cci_deploy/rollout_kubectl.md)
@@ -192,13 +192,13 @@ Note: remember that you need a kubernetes cluster accessible from the internet t
 
 If you use CircleCI as your CI platform but your deployments are managed outside CircleCI you can still benefit from the release agent. To know more check [here](../docs/onboarding_appendix.md#using-the-release-agent-when-deploying-outside-circleci).
 
-## Debug the Release Agent
+## Debug the release agent
 
 - Change the log level `kubectl patch configmap cci-release-agent-circleci-release-agent -n circleci-release-agent-system  -p '{"data": {"LOG_LEVEL": "DEBUG"}}'` the default level is ERROR.
 
 - Restart the agent `kubectl rollout restart deployment cci-release-agent-circleci-release-agent -n circleci-release-agent-system`
 
-- Deploy a kubernetes workload in one of the managed namespaces by the Release Agent
+- Deploy a kubernetes workload in one of the managed namespaces by the release agent
 
 - Check the agent logs `kubectl logs {pod_name} -n circleci-release-agent-system`. There are usually 2 pods but there is only one running at the time, check the appropriate pod to inspect the logs.
 
