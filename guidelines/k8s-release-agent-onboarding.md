@@ -11,15 +11,17 @@ This guide provides instructions on installing the CircleCI release agent. The f
 
 ## Table of contents
 
+- [CircleCI release agent onboarding](#circleci-release-agent-onboarding)
+  - [Table of contents](#table-of-contents)
   - [Key Terms](#key-terms)
-  - [Benefit of using CircleCI release agent](#benefit-of-using-circleci-release-agent)
+  - [Benefits of using the CircleCI release agent](#benefits-of-using-the-circleci-release-agent)
     - [How does the CircleCI release agent improve visibility?](#how-does-the-circleci-release-agent-improve-visibility)
     - [How does the CircleCI release agent enhance security?](#how-does-the-circleci-release-agent-enhance-security)
     - [How CircleCI and the release agent can reduce the impact of incidents?](#how-circleci-and-the-release-agent-can-reduce-the-impact-of-incidents)
-  - [Install the release agent and onboard a component in 4 steps](#install-the-release-agent-and-onboard-a-component-in-4-steps)
+  - [Install the release agent and onboard a component in 5 steps](#install-the-release-agent-and-onboard-a-component-in-5-steps)
     - [Pre-requisites](#pre-requisites)
     - [1. Set up a kubernetes cluster](#1-set-up-a-kubernetes-cluster)
-    - [2. Install the CircleCI release agent](#2-install-the-circleci-release-agent)
+    - [2. Create a CircleCI environment integration and integration token](#2-create-a-circleci-environment-integration-and-integration-token)
     - [3. Get your CircleCI Project ID](#3-get-your-circleci-project-id)
     - [4. Deploy one of the examples in this repository](#4-deploy-one-of-the-examples-in-this-repository)
     - [Setup is complete!](#setup-is-complete)
@@ -164,6 +166,8 @@ Use the command below to replace placeholders in the example Kubernetes manifest
     ```bash
     kubectl apply --namespace default -f ./examples/k8s_cli/k8s_deployment/manifest-rendered.yaml
     ```
+
+_Note: the actions performed in this step creates a new component._
 
 ### Setup is complete!
 
