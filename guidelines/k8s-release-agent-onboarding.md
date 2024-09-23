@@ -102,7 +102,7 @@ powershell -File ".\scripts\setup_local_cluster.ps1" -op "setup-local-cluster"
 
 ### 2. Create a CircleCI environment integration and integration token
 
-- In the link:https://app.circleci.com/home/[CircleCI web app] select your organization.
+- In the [CircleCI web app](https://app.circleci.com/home/) select your organization.
 - Select **Releases** in the sidebar.
 - First, you need to create and environment integration. If this is your first releases setup in CircleCI select **Create your first Environment Integration**. If not, select the **Environments** tab and select **Create Environment Integration**
 - Give your environment integration a name and description (optional) and make sure "Kubernetes Cluster" is selected under **Type**.
