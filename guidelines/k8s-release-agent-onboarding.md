@@ -7,7 +7,7 @@ This guide provides instructions on installing the CircleCI release agent. The f
 - Using the CircleCI release agent when deployment is not through CircleCI.
 
 > [!NOTE]
-> The CircleCI release agent is a paid product with a free tier. For pricing details, refer to our [pricing page](https://circleci.com/pricing) or the breakdown explanation provided [here](https://support.circleci.com/hc/en-us/articles/26787303887131-Understanding-CircleCI-s-Releases-Pricing).!
+> The CircleCI release agent is a paid product with a free tier. For pricing details, refer to our [pricing page](https://circleci.com/pricing) or the breakdown explanation provided [here](https://support.circleci.com/hc/en-us/articles/26787303887131-Understanding-CircleCI-s-Releases-Pricing).
 
 ## Table of contents
 
@@ -60,7 +60,7 @@ Organizations can enhance security through the integration of the CircleCI relea
 - Cancel, promote, and retry releases (for Argo Rollouts workloads)
 
 > [!NOTE]
-> _All of the above controls are available in the CircleCI releases dashboard web UI._!
+> All of the above controls are available in the CircleCI releases dashboard web UI.
 
 ### How CircleCI and the release agent can reduce the impact of incidents?
 
@@ -98,7 +98,7 @@ powershell -File ".\scripts\setup_local_cluster.ps1" -op "setup-local-cluster"
 ```
 
 > [!NOTE]
-> _Our local helper script to start up the cluster has additional options that can be found [here](../docs/onboarding_appendix.md#advanced-local-setup)._!
+> Our local helper script to start up the cluster has additional options that can be found [here](../docs/onboarding_appendix.md#advanced-local-setup).
 
 ### 2. Create a CircleCI environment integration and integration token
 
@@ -108,7 +108,8 @@ powershell -File ".\scripts\setup_local_cluster.ps1" -op "setup-local-cluster"
 - Give your environment integration a name and description (optional) and make sure "Kubernetes Cluster" is selected under **Type**.
 - After creation, you will land on an onboarding page: `CircleCI Environment Setup: Kubernetes Cluster`. Follow the steps in the releases UI until you have installed the release agent into your cluster and you see a green "ONLINE" badge.
 
-_See all options for installing the CircleCI release agent [here](https://circleci-public.github.io/cci-k8s-release-agent)._
+> [!NOTE]
+> See all options for installing the CircleCI release agent [here](https://circleci-public.github.io/cci-k8s-release-agent).
 
 ### 3. Get your CircleCI Project ID
 
@@ -123,7 +124,8 @@ A CircleCI Project ID is required to link your Kubernetes workload to your git r
 
 ![project id in the dashboard](../docs/img/project-id.png)
 
-_If you prefer to get the Project ID programatically check [this](../docs/onboarding_appendix.md#obtain-the-circleci-project-id-programmatically)._
+> [!NOTE]
+> If you prefer to get the Project ID programatically check [this](../docs/onboarding_appendix.md#obtain-the-circleci-project-id-programmatically).
 
 ### 4. Deploy one of the examples in this repository
 

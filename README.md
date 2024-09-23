@@ -15,4 +15,4 @@ The examples in theis repo are designed to help you implement robust CI/CD pipel
 * [Kubernetes release agent onboarding](./guidelines/k8s-release-agent-onboarding.md): Dive into the process of installing and using the CircleCI Kubernetes Release Agent. This example guides you through both local installation for rapid testing and cluster-based installation for real-time workload monitoring with CircleCI.
 
 > [!NOTE]
-> As time progresses, more guidelines will be added to this repository, and existing ones will be updated to reflect the evolution of CircleCI's Continuous Delivery offerings. Stay tuned for these enhancements!
+> As time progresses, more guidelines will be added to this repository, and existing ones will be updated to reflect the evolution of CircleCI's Continuous Delivery offerings. Stay tuned for these enhancements
