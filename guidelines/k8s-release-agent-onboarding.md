@@ -59,7 +59,8 @@ Organizations can enhance security through the integration of the CircleCI relea
 - Component restart (for Deployment and Argo Rollouts workloads)
 - Cancel, promote, and retry releases (for Argo Rollouts workloads)
 
-_All of the above controls are available in the CircleCI releases dashboard web UI._
+> [!NOTE]
+> _All of the above controls are available in the CircleCI releases dashboard web UI._!
 
 ### How CircleCI and the release agent can reduce the impact of incidents?
 
@@ -69,29 +70,24 @@ The CircleCI Release Agent has demonstrated value both for internal development 
 - With common in-cluster commands, your team can quickly self-service some key actions, such as restoring the last known good version within your environment - without waiting to find someone with production cluster break-glass access.
 - Engineers are equipped with tools to swiftly investigate and rectify incidents. This significantly minimizes the Mean Time To Recover (MTTR), enhancing system uptime and reliability.
 
-## Install the Release Agent and onboard a component in 4 steps
+## Install the Release Agent and onboard a component in 5 steps
 
 ### Pre-requisites
 
-- A CircleCI Environment Integration and Integration Token
+- A CircleCI account. You can [sign up for free](https://circleci.com/signup/).
+- A project building on CircleCI.
+- [Docker](https://docs.docker.com/engine/install) (if using our helper to spin up a cluster)
+- [Kind](https://kind.sigs.k8s.io/docs/user/quick-start) (if using our helper to spin up a cluster)
+- [Helm](https://helm.sh/docs/intro/install/) installed in your machine.
+- Clone this repository to your machine.
 
-  - Create an Environment Integration [here](https://app.circleci.com/releases). Ensure you are in your desired organization for this task.
-
-    - if you are redirected to the home page, select your desired organization and navigate to Releases from the left sidebar navigation menu.
-
-  - After creation, you will land on an onboarding page: `CircleCI Environment Setup: Kubernetes Cluster`.
-  - Expand the step `Install CircleCI's Release Agent`.
-  - Note down the value of the `tokenSecret.token` from the command in this step in a safe place. This is your Integration Token.
-
-- Access to a Kubernetes Cluster (either local or in the cloud).
-- [HELM](https://helm.sh/docs/intro/install/) installed in your machine
-- Clone this repository to your machine
-- Open a terminal window and navigate to the repository folder
 
 ### 1. Set up a kubernetes cluster
-If you have one already, you can proceed to step 2. Otherwise, use our local helper script to spin up a local Kubernetes cluster in seconds. This script requires [Docker](https://docs.docker.com/engine/install) and [Kind](https://kind.sigs.k8s.io/docs/user/quick-start) installed on your machine.
+If you have a Kubernetes cluster to use already, you can proceed to step 2. Otherwise, use our local helper script to spin up a local Kubernetes cluster in seconds.
 
-- Run in your terminal
+1. Open a terminal window and navigate to your clone of this repo.
+
+2. Run the following in your terminal:
 
 ```bash
 # For Mac/Linux
@@ -101,36 +97,16 @@ If you have one already, you can proceed to step 2. Otherwise, use our local hel
 powershell -File ".\scripts\setup_local_cluster.ps1" -op "setup-local-cluster"
 ```
 
-_Our local helper script to start up the cluster has additional options that can be found [here](../docs/onboarding_appendix.md#advanced-local-setup)._
+> [!NOTE]
+> _Our local helper script to start up the cluster has additional options that can be found [here](../docs/onboarding_appendix.md#advanced-local-setup)._!
 
-### 2. Install the CircleCI Release Agent
+### 2. Create a CircleCI environment integration and integration token
 
-- In the command below, replace `YOUR_CCI_INTEGRATION_TOKEN` with your own Environment Integration token.
-- Then, run the command in your terminal
-
-  Mac/Linux
-
-  ```bash
-  helm repo add release-agent https://circleci-public.github.io/cci-k8s-release-agent && \
-  helm repo update && \
-  helm upgrade --install cci-release-agent release-agent/circleci-release-agent \
-  --create-namespace \
-  --set tokenSecret.token=YOUR_CCI_INTEGRATION_TOKEN \
-  --set "managedNamespaces={default}" \
-  --namespace circleci-release-agent-system
-  ```
-
-  Windows
-
-  ```bash
-  helm repo add release-agent https://circleci-public.github.io/cci-k8s-release-agent `
-  ; helm repo update `
-  ; helm upgrade --install cci-release-agent release-agent/circleci-release-agent `
-  --create-namespace `
-  --set tokenSecret.token=YOUR_CCI_INTEGRATION_TOKEN `
-  --set "managedNamespaces={default}" `
-  --namespace circleci-release-agent-system
-  ```
+- In the link:https://app.circleci.com/home/[CircleCI web app] select your organization.
+- Select **Releases** in the sidebar.
+- First, you need to create and environment integration. If this is your first releases setup in CircleCI select **Create your first Environment Integration**. If not, select the **Environments** tab and select **Create Environment Integration**
+- Give your environment integration a name and description (optional) and make sure "Kubernetes Cluster" is selected under **Type**.
+- After creation, you will land on an onboarding page: `CircleCI Environment Setup: Kubernetes Cluster`. Follow the steps in the releases UI until you have installed the release agent into your cluster and you see a green "ONLINE" badge.
 
 _See all options for installing the CircleCI Release Agent [here](https://circleci-public.github.io/cci-k8s-release-agent)._
 
