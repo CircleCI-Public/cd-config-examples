@@ -167,7 +167,8 @@ Use the command below to replace placeholders in the example Kubernetes manifest
     kubectl apply --namespace default -f ./examples/k8s_cli/k8s_deployment/manifest-rendered.yaml
     ```
 
-_Note: the actions performed in this step creates a new component._
+> [!NOTE]
+> _The actions performed in this step creates a new component._
 
 ### Setup is complete!
 
