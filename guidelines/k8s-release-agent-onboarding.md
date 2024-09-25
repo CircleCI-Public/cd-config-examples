@@ -168,7 +168,7 @@ Use the command below to replace placeholders in the example Kubernetes manifest
     ```
 
 > [!NOTE]
-> _The actions performed in this step creates a new component._
+> The actions performed in this step creates a new component.
 
 ### Setup is complete!
 
@@ -186,9 +186,10 @@ Use the command below to replace placeholders in the example Kubernetes manifest
 
 ## Deploy via CircleCI and track every release
 
-If you are interested in how to build and deploy your application in an automated fashion using within CircleCI while tracking every release in your system, review the following guidelines:
+If you are interested in how to build and deploy your application in an automated fashion using within CircleCI while tracking every release in your system, review the following guides:
 
-Note: remember that you need a kubernetes cluster accessible from the internet to install the [release agent](https://circleci-public.github.io/cci-k8s-release-agent)
+> [!NOTE]
+> Remember that you need a kubernetes cluster accessible from the internet to install the [release agent](https://circleci-public.github.io/cci-k8s-release-agent)
 
 - [Deploy a Deployment workload using Kubectl](../docs/cci_deploy/deployment_kubectl.md)
 - [Deploy an Argo Rollouts workload using Kubectl](../docs/cci_deploy/rollout_kubectl.md)
@@ -201,14 +202,14 @@ If you use CircleCI as your CI platform but your deployments are managed outside
 
 ## Debug the release agent
 
-- Change the log level `kubectl patch configmap cci-release-agent-circleci-release-agent -n circleci-release-agent-system  -p '{"data": {"LOG_LEVEL": "DEBUG"}}'` the default level is ERROR.
+1. Change the log level `kubectl patch configmap cci-release-agent-circleci-release-agent -n circleci-release-agent-system  -p '{"data": {"LOG_LEVEL": "DEBUG"}}'` the default level is ERROR.
 
-- Restart the agent `kubectl rollout restart deployment cci-release-agent-circleci-release-agent -n circleci-release-agent-system`
+2. Restart the agent `kubectl rollout restart deployment cci-release-agent-circleci-release-agent -n circleci-release-agent-system`
 
-- Deploy a kubernetes workload in one of the managed namespaces by the release agent
+3. Deploy a kubernetes workload in one of the managed namespaces by the release agent
 
-- Check the agent logs `kubectl logs {pod_name} -n circleci-release-agent-system`. There are usually 2 pods but there is only one running at the time, check the appropriate pod to inspect the logs.
+4. Check the agent logs `kubectl logs {pod_name} -n circleci-release-agent-system`. There are usually 2 pods but there is only one running at the time, check the appropriate pod to inspect the logs.
 
-- If you still have issues feel free to contact the CircleCI support team [here](https://support.circleci.com/hc/en-us).
+5. If you still have issues feel free to contact the CircleCI support team [here](https://support.circleci.com/hc/en-us).
 
-- Or bring your questions to our [Discuss Forum](https://discuss.circleci.com/) or [Discord](https://discord.gg/circleci).
+6. Or bring your questions to our [Discuss Forum](https://discuss.circleci.com/) or [Discord](https://discord.gg/circleci).
