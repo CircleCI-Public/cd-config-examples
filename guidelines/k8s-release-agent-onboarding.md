@@ -30,7 +30,7 @@ This guide provides instructions on installing the CircleCI release agent. The f
 
 ## Key Terms
 
-- Component: A component in CircleCI is a collection of code and configuration that is deployed and released as a single unit. In Kubernetes terms, this would be a Deployment or Rollout object along with the related objects such as Pods, ReplicaSets, etc. that share a common `circleci.com/project-id` annotation and a c`ircleci.com/component-name` label.
+- Component: A component in CircleCI is a collection of code and configuration that is deployed and released as a single unit. In Kubernetes terms, this would be a Deployment or Rollout object along with the related objects such as Pods, ReplicaSets, etc. that share a common `circleci.com/project-id` annotation and a `circleci.com/component-name` label.
 
 - Project ID: In the context of this guide, a Project ID is the unique identifier that maps a Git Repository to a CircleCI project. It is a required field in the Kubernetes workload to allow the release agent to accurately track each component's association with a project, ensuring that only authorized individuals can take action on the component.
 
@@ -50,16 +50,16 @@ The CircleCI release agent tracks all releases occurring in your Kubernetes clus
 - Historical version changes of each component.
 - Links each release to its corresponding commit and the workflow that produced it (optional).
 
-CircleCI releases gives your developers an end-to-end view of the development lifecycle from repository merge to release.
+CircleCI releases gives developers an end-to-end view of the development lifecycle from repository merge to release.
 
 ### How does the CircleCI release agent enhance security?
 
 Organizations can enhance security through the integration of the CircleCI release agent by providing the ability to restrict access to their Kubernetes Cluster, granting permissions only to individuals who require it. This is accomplished through robust controls that are safeguarded by permission checks, ensuring that only authorized users can utilize them. The current available controls are:
 
-- Version restoration (rollback).
-- Replica scaling.
-- Component restart (for Deployment and Argo Rollouts workloads)
-- Cancel, promote, and retry releases (for Argo Rollouts workloads)
+- Version restoration or rollback (for Deployment and Argo Rollouts workloads).
+- Replica scaling (for Deployment and Argo Rollouts workloads).
+- Component restart (for Deployment and Argo Rollouts workloads).
+- Cancel, promote, and retry releases (for Argo Rollouts workloads).
 
 > [!NOTE]
 > All of the above controls are available in the CircleCI releases dashboard web UI.

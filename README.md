@@ -8,7 +8,7 @@ Continuous delivery (CD) is a software development practice in which code change
 
 An effective CI/CD setup monitors to ensure that the newly released version is in a stable state and ready to take on more responsibility or be promoted to other environments. This practice ensures that you can release a new version of your software quickly and sustainably, without dedicating resources to oversee the deployment of your software.
 
-The examples in theis repo are designed to help you implement robust CI/CD pipelines using CircleCI. It contains practical examples and guidelines, providing a hands-on approach to setting up your own continuous delivery pipelines.
+The examples in this repo are designed to help you implement robust CI/CD pipelines using CircleCI. It contains practical examples and guidelines, providing a hands-on approach to setting up your own continuous delivery pipelines.
 
 ## Examples
 
