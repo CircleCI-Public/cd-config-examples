@@ -6,9 +6,6 @@ This guide provides instructions on installing the CircleCI release agent. The f
 - Using tools such as the Kubernetes Client, Kustomize, or Helm.
 - Using the CircleCI release agent when deployment is not through CircleCI.
 
-> [!NOTE]
-> The CircleCI release agent is a paid product with a free tier. For pricing details, refer to our [pricing page](https://circleci.com/pricing) or the breakdown explanation provided [here](https://support.circleci.com/hc/en-us/articles/26787303887131-Understanding-CircleCI-s-Releases-Pricing).
-
 ## Table of contents
 
 - [CircleCI release agent onboarding](#circleci-release-agent-onboarding)
