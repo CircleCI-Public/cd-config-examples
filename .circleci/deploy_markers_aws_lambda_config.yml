@@ -1,0 +1,284 @@
+# CircleCI Config for AWS Lambda Deployment with Deploy Markers
+#
+# This config demonstrates how to deploy AWS Lambda functions and track
+# the deployment using CircleCI deploy markers (agentless approach).
+#
+# Prerequisites:
+# 1. AWS credentials configured (OIDC recommended)
+# 2. Lambda function already created in AWS
+# 3. "Custom" environment integration created in CircleCI
+
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@4.1.3
+
+commands:
+  generate_deploy_info:
+    description: "Generate version and deployment information"
+    steps:
+      - run:
+          name: Get Version
+          command: |
+            VERSION=$(cat version)
+            echo "export VERSION='$VERSION'" >> deploy.env
+
+  load_deploy_info:
+    description: "Load deployment info into environment"
+    steps:
+      - run:
+          name: Load deploy info
+          command: |
+            cat deploy.env >> $BASH_ENV
+
+jobs:
+  # =================================================================
+  # DEPLOY LAMBDA FUNCTION WITH DEPLOY MARKERS
+  # =================================================================
+  deploy-lambda:
+    docker:
+      - image: cimg/python:3.11
+    environment:
+      # Update these values for your deployment
+      DEPLOY_NAME: lambda-production
+      ENVIRONMENT_NAME: production
+      FUNCTION_NAME: my-lambda-function    # Your Lambda function name
+    steps:
+      - checkout
+      - generate_deploy_info
+      - load_deploy_info
+      
+      - aws-cli/setup:
+          role_arn: $AWS_OIDC_ROLE
+          region: $AWS_REGION
+          role_session_name: "cci-lambda-deploy"
+      
+      # Plan the deployment
+      - run:
+          name: Plan deployment
+          command: |
+            circleci run release plan $DEPLOY_NAME \
+              --environment-name=$ENVIRONMENT_NAME \
+              --component-name=$FUNCTION_NAME \
+              --target-version=$VERSION
+      
+      # Install dependencies and package Lambda
+      - run:
+          name: Install dependencies
+          command: |
+            pip install -r requirements.txt -t package/
+      
+      - run:
+          name: Package Lambda function
+          command: |
+            cd package && zip -r ../function.zip . && cd ..
+            zip -g function.zip lambda_function.py
+            # Add any other source files
+            # zip -g function.zip handler.py utils.py
+      
+      # Deploy Lambda function
+      - run:
+          name: Deploy Lambda function
+          command: |
+            aws lambda update-function-code \
+              --function-name $FUNCTION_NAME \
+              --zip-file fileb://function.zip
+      
+      # Update status to RUNNING
+      - run:
+          name: Update status to RUNNING
+          command: |
+            circleci run release update $DEPLOY_NAME --status=RUNNING
+      
+      # Wait for function to be updated
+      - run:
+          name: Wait for Lambda update
+          command: |
+            echo "Waiting for Lambda function update to complete..."
+            aws lambda wait function-updated --function-name $FUNCTION_NAME
+            echo "Lambda function updated successfully"
+      
+      # Validate with test invocation
+      - run:
+          name: Validate Lambda function
+          command: |
+            echo "Testing Lambda function invocation..."
+            aws lambda invoke \
+              --function-name $FUNCTION_NAME \
+              --payload '{"test": true}' \
+              --cli-binary-format raw-in-base64-out \
+              response.json
+            
+            echo "Lambda response:"
+            cat response.json
+            
+            # Check for errors in response
+            if grep -q "errorMessage" response.json; then
+              echo "FAILURE_REASON='Lambda invocation returned an error'" > failure_reason.env
+              exit 1
+            fi
+      
+      # Update final status
+      - run:
+          name: Update deployment to SUCCESS
+          command: |
+            circleci run release update $DEPLOY_NAME --status=SUCCESS
+          when: on_success
+      
+      - run:
+          name: Update deployment to FAILED
+          command: |
+            if [ -f failure_reason.env ]; then
+              source failure_reason.env
+            fi
+            circleci run release update $DEPLOY_NAME \
+              --status=FAILED \
+              --failure-reason="${FAILURE_REASON:-Lambda deployment or validation failed}"
+          when: on_fail
+
+  # =================================================================
+  # DEPLOY LAMBDA WITH ALIAS (FOR STAGED ROLLOUTS)
+  # =================================================================
+  deploy-lambda-with-alias:
+    docker:
+      - image: cimg/python:3.11
+    environment:
+      DEPLOY_NAME: lambda-production-alias
+      ENVIRONMENT_NAME: production
+      FUNCTION_NAME: my-lambda-function
+      ALIAS_NAME: live                      # Alias to update (e.g., live, prod)
+    steps:
+      - checkout
+      - generate_deploy_info
+      - load_deploy_info
+      
+      - aws-cli/setup:
+          role_arn: $AWS_OIDC_ROLE
+          region: $AWS_REGION
+      
+      # Plan the deployment
+      - run:
+          name: Plan deployment
+          command: |
+            circleci run release plan $DEPLOY_NAME \
+              --environment-name=$ENVIRONMENT_NAME \
+              --component-name=$FUNCTION_NAME \
+              --target-version=$VERSION
+      
+      # Package and deploy (same as above)
+      - run:
+          name: Package Lambda
+          command: |
+            pip install -r requirements.txt -t package/
+            cd package && zip -r ../function.zip . && cd ..
+            zip -g function.zip lambda_function.py
+      
+      - run:
+          name: Deploy Lambda function
+          command: |
+            aws lambda update-function-code \
+              --function-name $FUNCTION_NAME \
+              --zip-file fileb://function.zip
+      
+      - run:
+          name: Wait for update
+          command: |
+            aws lambda wait function-updated --function-name $FUNCTION_NAME
+      
+      # Publish new version
+      - run:
+          name: Publish Lambda version
+          command: |
+            VERSION_ARN=$(aws lambda publish-version \
+              --function-name $FUNCTION_NAME \
+              --description "Deployed via CircleCI - $VERSION" \
+              --query 'FunctionArn' --output text)
+            
+            NEW_VERSION=$(echo $VERSION_ARN | grep -oE '[0-9]+$')
+            echo "export NEW_VERSION='$NEW_VERSION'" >> $BASH_ENV
+            echo "Published Lambda version: $NEW_VERSION"
+      
+      # Update alias to point to new version
+      - run:
+          name: Update alias
+          command: |
+            aws lambda update-alias \
+              --function-name $FUNCTION_NAME \
+              --name $ALIAS_NAME \
+              --function-version $NEW_VERSION
+            echo "Updated alias $ALIAS_NAME to version $NEW_VERSION"
+      
+      # Update status to RUNNING
+      - run:
+          name: Update status to RUNNING
+          command: |
+            circleci run release update $DEPLOY_NAME --status=RUNNING
+      
+      # Validate
+      - run:
+          name: Validate Lambda via alias
+          command: |
+            aws lambda invoke \
+              --function-name "$FUNCTION_NAME:$ALIAS_NAME" \
+              --payload '{"test": true}' \
+              --cli-binary-format raw-in-base64-out \
+              response.json
+            cat response.json
+      
+      # Update final status
+      - run:
+          name: Update deployment to SUCCESS
+          command: |
+            circleci run release update $DEPLOY_NAME --status=SUCCESS
+          when: on_success
+      
+      - run:
+          name: Update deployment to FAILED
+          command: |
+            circleci run release update $DEPLOY_NAME \
+              --status=FAILED \
+              --failure-reason="Lambda deployment failed"
+          when: on_fail
+
+  # =================================================================
+  # CANCEL HANDLER
+  # =================================================================
+  cancel-deploy:
+    docker:
+      - image: cimg/base:current
+    parameters:
+      deploy_name:
+        type: string
+    steps:
+      - run:
+          name: Update deployment to CANCELED
+          command: |
+            circleci run release update << parameters.deploy_name >> --status=CANCELED
+
+workflows:
+  # Simple Lambda deployment
+  deploy-lambda-workflow:
+    jobs:
+      - deploy-lambda:
+          filters:
+            branches:
+              only: main
+      - cancel-deploy:
+          deploy_name: lambda-production
+          requires:
+            - deploy-lambda:
+              - canceled
+
+  # Lambda deployment with version aliases (uncomment to use)
+  # deploy-lambda-alias-workflow:
+  #   jobs:
+  #     - deploy-lambda-with-alias:
+  #         filters:
+  #           branches:
+  #             only: main
+  #     - cancel-deploy:
+  #         deploy_name: lambda-production-alias
+  #         requires:
+  #           - deploy-lambda-with-alias:
+  #             - canceled
+

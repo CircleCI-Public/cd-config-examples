@@ -1,15 +1,19 @@
 # CircleCI release agent onboarding
 
-This guide provides instructions on installing the CircleCI release agent. The following subjects are covered:
+This guide provides instructions on installing the CircleCI release agent for **Kubernetes** deployments. The following subjects are covered:
 
 - Onboarding and deploying Kubernetes workloads via CircleCI or locally.
 - Using tools such as the Kubernetes Client, Kustomize, or Helm.
 - Using the CircleCI release agent when deployment is not through CircleCI.
 
+> [!TIP]
+> **Not deploying to Kubernetes?** Or prefer a simpler setup without installing an agent? Check out [Deploy Markers](./deploy-markers-onboarding.md) for a lightweight approach that works with any deployment target (AWS, GCP, Azure, Heroku, etc.).
+
 ## Table of contents
 
 - [CircleCI release agent onboarding](#circleci-release-agent-onboarding)
   - [Table of contents](#table-of-contents)
+  - [Release Agent vs Deploy Markers: Which approach should I use?](#release-agent-vs-deploy-markers-which-approach-should-i-use)
   - [Key Terms](#key-terms)
   - [Benefits of using the CircleCI release agent](#benefits-of-using-the-circleci-release-agent)
     - [How does the CircleCI release agent improve visibility?](#how-does-the-circleci-release-agent-improve-visibility)
@@ -24,6 +28,32 @@ This guide provides instructions on installing the CircleCI release agent. The f
     - [Setup is complete!](#setup-is-complete)
   - [Deploy via CircleCI and track every release](#deploy-via-circleci-and-track-every-release)
   - [Debug the release agent](#debug-the-release-agent)
+
+## Release Agent vs Deploy Markers: Which approach should I use?
+
+CircleCI provides two approaches to track deployments:
+
+| Feature | Release Agent (this guide) | Deploy Markers |
+|---------|---------------------------|---------------------------|
+| **Setup complexity** | Requires agent installation in cluster | No installation required |
+| **Supported targets** | Kubernetes only | Any deployment target |
+| **Status updates** | Automatic | Manual via CLI commands |
+| **Rollback support** | Yes (via UI) | Yes (via rollback.yml file) |
+| **Scaling controls** | Yes (via UI) | No |
+| **Restart controls** | Yes (via UI) | No |
+| **Release promotion** | Yes (for Argo Rollouts) | No |
+
+**Choose the Release Agent (this guide) when:**
+- You deploy to Kubernetes
+- You want automatic deployment status tracking
+- You need scaling or restart controls from the CircleCI UI
+- You're using Argo Rollouts and want promotion controls
+
+**Choose [Deploy Markers](./deploy-markers-onboarding.md) when:**
+- You deploy to non-Kubernetes targets (AWS ECS, Lambda, Heroku, etc.)
+- You prefer simpler setup without installing anything in your infrastructure
+- You want explicit control over deployment status updates
+- Your deployment target doesn't allow agent installation
 
 ## Key Terms
 

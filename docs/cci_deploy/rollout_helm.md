@@ -1,6 +1,11 @@
 # CircleCI Rollout using Helm
 
-This guideline shows how to configure your CircleCI workflow to deploy an Argo Rollout usign Helm. It also assumes that you have a Kubernetes cluster accessible from the internet with the CircleCI [k8s-release-agent](https://circleci-public.github.io/cci-k8s-release-agent) installed.
+This guideline shows how to configure your CircleCI workflow to deploy an Argo Rollout using Helm with the CircleCI [k8s-release-agent](https://circleci-public.github.io/cci-k8s-release-agent) for automatic deployment tracking and release promotion controls.
+
+> [!TIP]
+> **Prefer a simpler setup?** You can also track deployments without the release agent using [Deploy Markers](../deploy_markers/kubernetes_deployment.md). However, deploy markers don't support Argo Rollouts promotion controls.
+
+This guide assumes that you have a Kubernetes cluster accessible from the internet with the CircleCI release agent installed.
 
 ## Pre-requistes
 
