@@ -91,11 +91,33 @@ jobs:
       - kubernetes/create-or-update-resource:
           namespace: cci-k8s-agent-demo ## update the namespace at your convenience
           resource-file-path: ./examples/k8s_cli/k8s_argo_rollouts/manifest-rendered.yaml
+      # Link deployment to release job trigger (optional but recommended)
+      # This allows you to monitor the in-cluster release process as part of the deployment workflow
+      # For Argo Rollouts, use --release-strategy=progressive
+      # See: https://circleci.com/docs/guides/deploy/configure-your-kubernetes-components/#link-release
+      - run:
+          name: Plan release
+          command: |
+            circleci run release plan \
+              --environment-name=production \
+              --component-name=cci-rollout-demo \
+              --target-version=$VERSION \
+              --release-strategy=progressive \
+              cci-rollout-release
+
+  # Release job to monitor the in-cluster release process
+  # This job will track the release status from the release agent
+  release:
+    type: release
+    plan_name: cci-rollout-release
 
 workflows:
   test-build-deploy:
     jobs:
       - deploy
+      - release:
+          requires:
+            - deploy
     # # example workflow of a real application
     #   - lint
     #   - test

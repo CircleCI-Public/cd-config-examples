@@ -94,6 +94,24 @@ jobs:
           name: install-chart
           command: |
             helm upgrade --namespace cci-k8s-agent-demo --create-namespace --install helm-cci-deploy-demo ./examples/helm/k8s_deployment
+      # Link deployment to release job trigger (optional but recommended)
+      # This allows you to monitor the in-cluster release process as part of the deployment workflow
+      # See: https://circleci.com/docs/guides/deploy/configure-your-kubernetes-components/#link-release
+      - run:
+          name: Plan release
+          command: |
+            circleci run release plan \
+              --environment-name=production \
+              --component-name=helm-cci-deploy-demo \
+              --target-version=$VERSION \
+              helm-deploy-release
+
+  # Release job to monitor the in-cluster release process
+  # This job will track the release status from the release agent
+  release:
+    type: release
+    plan_name: helm-deploy-release
+
 workflows:
   test-build-deploy:
     jobs:
@@ -102,6 +120,9 @@ workflows:
             branches:
               only:
                 - main
+      - release:
+          requires:
+            - deploy
     # # example workflow of a real application
     #   - lint
     #   - test
