@@ -69,4 +69,33 @@ Once validated the Kubernetes manifest the `render-manifest` replaces the enviro
 
 The `install-chart` step proceeds to install the local chart into the kubernetes cluster configured in the `KUBECONFIG_DATA` environment variable.
 
-After this step the release must be visible in the CircleCI [releases](https://app.circleci.com/releases) dashobard.
+**Linking Deployment to Release Job (Optional)**
+
+After deploying, the config includes a `release plan` step that links the deployment to a CircleCI release job. This provides:
+
+- Monitoring the in-cluster release process as part of the overall deployment workflow
+- Easier navigation to find releases for a given pipeline
+- Ability to orchestrate deployments across multiple environments
+
+```yaml
+- run:
+    name: Plan release
+    command: |
+      circleci run release plan \
+        --environment-name=production \
+        --component-name=helm-cci-deploy-demo \
+        --target-version=$VERSION \
+        helm-deploy-release
+```
+
+A separate release job of `type: release` monitors the release status from the release agent:
+
+```yaml
+release:
+  type: release
+  plan_name: helm-deploy-release
+```
+
+See the [CircleCI documentation](https://circleci.com/docs/guides/deploy/configure-your-kubernetes-components/#link-release) for more details.
+
+After deployment, the release is visible in the CircleCI [releases](https://app.circleci.com/releases) dashboard.

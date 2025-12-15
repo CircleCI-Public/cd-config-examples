@@ -85,10 +85,33 @@ jobs:
           name: install-chart
           command: |
             helm upgrade --namespace cci-k8s-agent-demo --create-namespace --install helm-cci-rollout-demo ./examples/helm/k8s_argo_rollout
+      # Link deployment to release job trigger (optional but recommended)
+      # This allows you to monitor the in-cluster release process as part of the deployment workflow
+      # For Argo Rollouts, use --release-strategy=progressive
+      # See: https://circleci.com/docs/guides/deploy/configure-your-kubernetes-components/#link-release
+      - run:
+          name: Plan release
+          command: |
+            circleci run release plan \
+              --environment-name=production \
+              --component-name=helm-cci-rollout-demo \
+              --target-version=$VERSION \
+              --release-strategy=progressive \
+              helm-rollout-release
+
+  # Release job to monitor the in-cluster release process
+  # This job will track the release status from the release agent
+  release:
+    type: release
+    plan_name: helm-rollout-release
+
 workflows:
   test-build-deploy:
     jobs:
       - deploy
+      - release:
+          requires:
+            - deploy
     # # example workflow of a real application
     #   - lint
     #   - test

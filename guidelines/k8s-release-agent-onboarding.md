@@ -211,6 +211,54 @@ Use the command below to replace placeholders in the example Kubernetes manifest
   powershell -File ".\scripts\setup_local_cluster.ps1" -op "destroy-local-cluster"
   ```
 
+## Link deployment to release job (Optional)
+
+You can link your deployment with the CircleCI deployment job that triggered it by adding a release job to your workflow. This provides:
+
+- **Monitoring**: Track the in-cluster release process as part of the overall deployment workflow in CircleCI
+- **Discoverability**: Easily find releases for a given pipeline
+- **Orchestration**: Deploy to production only after a successful deployment in staging
+
+To add a release job:
+
+1. Add a `plan release` step at the end of your deployment job:
+
+```yaml
+- run:
+    name: Plan release
+    command: |
+      circleci run release plan \
+        --environment-name=production \
+        --component-name=my-component \
+        --target-version=$VERSION \
+        my-release-plan
+```
+
+2. Define a release job that monitors the release:
+
+```yaml
+release:
+  type: release
+  plan_name: my-release-plan
+```
+
+3. Add the release job to your workflow:
+
+```yaml
+workflows:
+  deploy:
+    jobs:
+      - deploy
+      - release:
+          requires:
+            - deploy
+```
+
+> [!NOTE]
+> For Argo Rollouts, add `--release-strategy=progressive` to the release plan command.
+
+See the [CircleCI documentation](https://circleci.com/docs/guides/deploy/configure-your-kubernetes-components/#link-release) for more details.
+
 ## Deploy via CircleCI and track every release
 
 If you are interested in how to build and deploy your application in an automated fashion using within CircleCI while tracking every release in your system, review the following guides:
