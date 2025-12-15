@@ -1,6 +1,11 @@
 # CircleCI Deployment using Kustomize
 
-This guideline shows how to configure your CircleCI workflow to deploy a Kubernetes Deployment usign Kubectl with Kustomize. It also assumes that you have a Kubernetes cluster accessible from the internet with the CircleCI [k8s-release-agent](https://circleci-public.github.io/cci-k8s-release-agent) installed.
+This guideline shows how to configure your CircleCI workflow to deploy a Kubernetes Deployment using Kubectl with Kustomize and the CircleCI [k8s-release-agent](https://circleci-public.github.io/cci-k8s-release-agent) for automatic deployment tracking.
+
+> [!TIP]
+> **Prefer a simpler setup?** You can also track Kubernetes deployments without the release agent using [Deploy Markers](../deploy_markers/kubernetes_deployment.md). Deploy markers require no installation but don't provide scaling/restart controls from the UI.
+
+This guide assumes that you have a Kubernetes cluster accessible from the internet with the CircleCI release agent installed.
 
 ## Pre-requistes
 

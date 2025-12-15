@@ -1,5 +1,9 @@
 # Onboarding Appendices
 
+This document contains supplementary information for the deployment tracking guides:
+- [Release Agent onboarding](../guidelines/k8s-release-agent-onboarding.md) - Agent-based Kubernetes tracking
+- [Deploy Markers onboarding](../guidelines/deploy-markers-onboarding.md) - Deploy markers for any target
+
 ## Obtain the CircleCI Project Id programmatically
 
 - Use a CircleCI PAT (Peronsal Access Token) if you do not have one yet, you can create a token following the instruction [here](https://circleci.com/docs/managing-api-tokens/#creating-a-personal-api-token)
@@ -82,3 +86,26 @@ Also Argo Rollouts can be installed with the same script in case you want to tes
 ```bash
 ./scripts/setup_local_cluster.sh setup-local-cluster install-ingress install-argo-rollouts
 ```
+
+## Alternative: Deploy Markers
+
+If installing the release agent isn't feasible for your environment, or if you're deploying to non-Kubernetes targets, consider using [Deploy Markers](../guidelines/deploy-markers-onboarding.md) for deployment tracking without an agent.
+
+Deploy markers work by adding CLI commands to your CircleCI config:
+
+```yaml
+- run:
+    name: Log deployment
+    command: |
+      circleci run release log \
+        --environment-name=production \
+        --component-name=my-app \
+        --target-version=$CIRCLE_SHA1
+```
+
+This approach:
+- Works with **any** deployment target (AWS, GCP, Azure, Heroku, on-prem, etc.)
+- Requires **no installation** in your infrastructure
+- Provides deployment visibility in the CircleCI Deploys Dashboard
+
+See the [Deploy Markers onboarding guide](../guidelines/deploy-markers-onboarding.md) for complete setup instructions.

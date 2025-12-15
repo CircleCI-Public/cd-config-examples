@@ -1,0 +1,178 @@
+# CircleCI Config for AWS ECS Deployment with Deploy Markers
+#
+# This config demonstrates how to deploy to AWS ECS/Fargate and track
+# the deployment using CircleCI deploy markers (agentless approach).
+#
+# Prerequisites:
+# 1. AWS credentials configured (OIDC recommended)
+# 2. ECR repository with your application image
+# 3. ECS cluster and service already created
+# 4. "Custom" environment integration created in CircleCI
+
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@4.1.3
+  aws-ecr: circleci/aws-ecr@9.0.2
+  aws-ecs: circleci/aws-ecs@4.0.0
+
+commands:
+  generate_deploy_info:
+    description: "Generate version and deployment information"
+    steps:
+      - run:
+          name: Get Version
+          command: |
+            VERSION=$(cat version)
+            echo "export VERSION='$VERSION'" >> deploy.env
+
+  load_deploy_info:
+    description: "Load deployment info into environment"
+    steps:
+      - run:
+          name: Load deploy info
+          command: |
+            cat deploy.env >> $BASH_ENV
+
+jobs:
+  # =================================================================
+  # BUILD AND PUSH DOCKER IMAGE TO ECR
+  # =================================================================
+  build-and-push:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - generate_deploy_info
+      - load_deploy_info
+      
+      - aws-cli/setup:
+          role_arn: $AWS_OIDC_ROLE
+          region: $AWS_REGION
+          role_session_name: "cci-ecr-push"
+      
+      - aws-ecr/ecr_login
+      
+      - run:
+          name: Build and push image
+          command: |
+            docker build -t $AWS_ECR_REGISTRY/$ECR_REPO:$VERSION .
+            docker push $AWS_ECR_REGISTRY/$ECR_REPO:$VERSION
+      
+      - persist_to_workspace:
+          root: .
+          paths:
+            - deploy.env
+
+  # =================================================================
+  # DEPLOY TO ECS WITH DEPLOY MARKERS
+  # =================================================================
+  deploy-ecs:
+    docker:
+      - image: cimg/base:current
+    environment:
+      # Update these values for your deployment
+      DEPLOY_NAME: ecs-production
+      ENVIRONMENT_NAME: production
+      ECS_CLUSTER: my-cluster          # Your ECS cluster name
+      ECS_SERVICE: my-service          # Your ECS service name
+      CONTAINER_NAME: my-container     # Container name in task definition
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - load_deploy_info
+      
+      - aws-cli/setup:
+          role_arn: $AWS_OIDC_ROLE
+          region: $AWS_REGION
+          role_session_name: "cci-ecs-deploy"
+      
+      # Plan the deployment
+      - run:
+          name: Plan deployment
+          command: |
+            circleci run release plan $DEPLOY_NAME \
+              --environment-name=$ENVIRONMENT_NAME \
+              --component-name=$ECS_SERVICE \
+              --target-version=$VERSION
+      
+      # Update ECS service with new image
+      - aws-ecs/update-service:
+          cluster: $ECS_CLUSTER
+          service-name: $ECS_SERVICE
+          container-image-name-updates: "container=$CONTAINER_NAME,tag=$VERSION"
+      
+      # Update status to RUNNING
+      - run:
+          name: Update status to RUNNING
+          command: |
+            circleci run release update $DEPLOY_NAME --status=RUNNING
+      
+      # Wait for ECS deployment to stabilize
+      - run:
+          name: Wait for ECS deployment
+          command: |
+            echo "Waiting for ECS service to stabilize..."
+            aws ecs wait services-stable \
+              --cluster $ECS_CLUSTER \
+              --services $ECS_SERVICE
+            echo "ECS service is stable"
+      
+      # Optional: Health check
+      - run:
+          name: Validate deployment
+          command: |
+            echo "Running health checks..."
+            # Add your health check commands here
+            # Example:
+            # TASK_ARN=$(aws ecs list-tasks --cluster $ECS_CLUSTER --service-name $ECS_SERVICE --query 'taskArns[0]' --output text)
+            # TASK_IP=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $TASK_ARN --query 'tasks[0].containers[0].networkInterfaces[0].privateIpv4Address' --output text)
+            # curl -f http://$TASK_IP:8080/health || exit 1
+      
+      # Update final status
+      - run:
+          name: Update deployment to SUCCESS
+          command: |
+            circleci run release update $DEPLOY_NAME --status=SUCCESS
+          when: on_success
+      
+      - run:
+          name: Update deployment to FAILED
+          command: |
+            circleci run release update $DEPLOY_NAME \
+              --status=FAILED \
+              --failure-reason="ECS deployment failed to stabilize"
+          when: on_fail
+
+  # =================================================================
+  # CANCEL HANDLER
+  # =================================================================
+  cancel-deploy:
+    docker:
+      - image: cimg/base:current
+    environment:
+      DEPLOY_NAME: ecs-production
+    steps:
+      - run:
+          name: Update deployment to CANCELED
+          command: |
+            circleci run release update $DEPLOY_NAME --status=CANCELED
+
+workflows:
+  build-and-deploy:
+    jobs:
+      - build-and-push:
+          filters:
+            branches:
+              only: main
+      - deploy-ecs:
+          requires:
+            - build-and-push
+      - cancel-deploy:
+          requires:
+            - deploy-ecs:
+              - canceled
+

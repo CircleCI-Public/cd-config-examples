@@ -1,0 +1,240 @@
+# CircleCI Config for Kubernetes Deployment with Deploy Markers (Agentless)
+#
+# This config demonstrates how to deploy to Kubernetes and track
+# the deployment using CircleCI deploy markers WITHOUT the release agent.
+#
+# Use this approach when:
+# - You want simple deployment tracking without installing an agent
+# - You don't need rollback/scale/restart controls from CircleCI UI
+# - You want to keep your K8s manifests free of CircleCI-specific annotations
+#
+# For advanced controls (rollback, scaling, restart), use the release agent instead.
+# See: deploy_k8s_cli_config.yml or deployment_helm_config.yml
+#
+# Prerequisites:
+# 1. KUBECONFIG_DATA environment variable with base64-encoded kubeconfig
+# 2. "Custom" environment integration created in CircleCI
+
+version: 2.1
+
+orbs:
+  kubernetes: circleci/kubernetes@1.3.1
+
+commands:
+  generate_deploy_info:
+    description: "Generate version and deployment information"
+    steps:
+      - run:
+          name: Get Image Tag and Version
+          command: |
+            VERSION=$(cat version)
+            
+            # Extract the minor version number
+            minor_version=$(echo "$VERSION" | cut -d '.' -f2)
+
+            TAG=purple
+            if ((minor_version % 2 == 1)); then
+                TAG="green"
+            fi
+
+            echo "export VERSION='$VERSION'" >> deploy.env
+            echo "export TAG='$TAG'" >> deploy.env
+
+  load_deploy_info:
+    description: "Load deployment info into environment"
+    steps:
+      - run:
+          name: Load deploy info
+          command: |
+            cat deploy.env >> $BASH_ENV
+
+jobs:
+  # =================================================================
+  # KUBECTL DEPLOYMENT WITH DEPLOY MARKERS
+  # =================================================================
+  deploy-kubectl:
+    docker:
+      - image: cimg/base:current
+    environment:
+      DEPLOY_NAME: k8s-production
+      ENVIRONMENT_NAME: production
+      COMPONENT_NAME: cci-deploy-demo
+      NAMESPACE: default
+    steps:
+      - checkout
+      - generate_deploy_info
+      - load_deploy_info
+      
+      - kubernetes/install-kubectl
+      - kubernetes/install-kubeconfig:
+          kubeconfig: KUBECONFIG_DATA
+      
+      # Plan the deployment
+      - run:
+          name: Plan deployment
+          command: |
+            circleci run release plan $DEPLOY_NAME \
+              --environment-name=$ENVIRONMENT_NAME \
+              --component-name=$COMPONENT_NAME \
+              --target-version=$VERSION
+      
+      # Render manifests with version info
+      - run:
+          name: Render manifests
+          command: |
+            # Simple example using envsubst
+            # Your manifests just need standard image tag references
+            mkdir -p rendered
+            for f in manifests/*.yaml; do
+              envsubst < "$f" > "rendered/$(basename $f)"
+            done
+      
+      # Apply manifests
+      - run:
+          name: Apply Kubernetes manifests
+          command: |
+            kubectl apply -f rendered/ -n $NAMESPACE
+      
+      # Update status to RUNNING
+      - run:
+          name: Update status to RUNNING
+          command: |
+            circleci run release update $DEPLOY_NAME --status=RUNNING
+      
+      # Wait for rollout to complete
+      - run:
+          name: Wait for rollout
+          command: |
+            kubectl rollout status deployment/$COMPONENT_NAME -n $NAMESPACE --timeout=300s
+      
+      # Update final status
+      - run:
+          name: Update deployment to SUCCESS
+          command: |
+            circleci run release update $DEPLOY_NAME --status=SUCCESS
+          when: on_success
+      
+      - run:
+          name: Update deployment to FAILED
+          command: |
+            circleci run release update $DEPLOY_NAME \
+              --status=FAILED \
+              --failure-reason="Kubernetes rollout failed or timed out"
+          when: on_fail
+
+  # =================================================================
+  # HELM DEPLOYMENT WITH DEPLOY MARKERS
+  # =================================================================
+  deploy-helm:
+    docker:
+      - image: cimg/base:current
+    environment:
+      DEPLOY_NAME: helm-production
+      ENVIRONMENT_NAME: production
+      RELEASE_NAME: my-app
+      NAMESPACE: default
+      CHART_PATH: ./charts/my-app
+    steps:
+      - checkout
+      - generate_deploy_info
+      - load_deploy_info
+      
+      - kubernetes/install-kubeconfig:
+          kubeconfig: KUBECONFIG_DATA
+      
+      - run:
+          name: Install Helm
+          command: |
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      
+      # Plan the deployment
+      - run:
+          name: Plan deployment
+          command: |
+            circleci run release plan $DEPLOY_NAME \
+              --environment-name=$ENVIRONMENT_NAME \
+              --component-name=$RELEASE_NAME \
+              --target-version=$VERSION
+      
+      # Deploy with Helm
+      - run:
+          name: Deploy with Helm
+          command: |
+            helm upgrade --install $RELEASE_NAME $CHART_PATH \
+              --namespace $NAMESPACE \
+              --create-namespace \
+              --set image.tag=$TAG \
+              --set version=$VERSION \
+              --wait \
+              --timeout 5m
+      
+      # Update status to RUNNING
+      - run:
+          name: Update status to RUNNING
+          command: |
+            circleci run release update $DEPLOY_NAME --status=RUNNING
+      
+      # Validate deployment
+      - run:
+          name: Validate deployment
+          command: |
+            kubectl get pods -n $NAMESPACE -l app.kubernetes.io/name=$RELEASE_NAME
+      
+      # Update final status
+      - run:
+          name: Update deployment to SUCCESS
+          command: |
+            circleci run release update $DEPLOY_NAME --status=SUCCESS
+          when: on_success
+      
+      - run:
+          name: Update deployment to FAILED
+          command: |
+            circleci run release update $DEPLOY_NAME \
+              --status=FAILED \
+              --failure-reason="Helm deployment failed"
+          when: on_fail
+
+  # =================================================================
+  # CANCEL HANDLER
+  # =================================================================
+  cancel-deploy:
+    docker:
+      - image: cimg/base:current
+    parameters:
+      deploy_name:
+        type: string
+        default: k8s-production
+    steps:
+      - run:
+          name: Update deployment to CANCELED
+          command: |
+            circleci run release update << parameters.deploy_name >> --status=CANCELED
+
+workflows:
+  # Kubectl deployment workflow
+  deploy-kubectl-workflow:
+    jobs:
+      - deploy-kubectl:
+          filters:
+            branches:
+              only: main
+      - cancel-deploy:
+          deploy_name: k8s-production
+          requires:
+            - deploy-kubectl:
+              - canceled
+
+  # Helm deployment workflow (uncomment to use)
+  # deploy-helm-workflow:
+  #   jobs:
+  #     - deploy-helm:
+  #         filters:
+  #           branches:
+  #             only: main
+  #     - cancel-deploy:
+  #         deploy_name: helm-production
+  #         requires:
+  #           - deploy-helm:
+  #             - canceled
+

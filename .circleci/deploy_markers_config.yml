@@ -1,0 +1,217 @@
+# CircleCI Config for Agentless Deployment Tracking with Deploy Markers
+#
+# This config demonstrates how to track deployments using deploy markers
+# without requiring the CircleCI release agent. This approach works for
+# ANY deployment target (AWS, GCP, Azure, on-prem servers, etc.).
+#
+# To use this config:
+# 1. Rename this file to config.yml (or copy its contents)
+# 2. Update ENVIRONMENT_NAME, COMPONENT_NAME, and DEPLOY_NAME
+# 3. Replace the placeholder deployment commands with your actual deployment logic
+# 4. Create a "Custom" environment integration in CircleCI
+
+version: 2.1
+
+commands:
+  generate_deploy_info:
+    description: "Generate version and deployment information"
+    steps:
+      - run:
+          name: Get Image Tag and Version
+          command: |
+            VERSION=$(cat version)
+            
+            # Extract the minor version number (assuming format "vX.Y")
+            minor_version=$(echo "$VERSION" | cut -d '.' -f2)
+
+            TAG=purple
+            # if minor_version is odd use green tag
+            if ((minor_version % 2 == 1)); then
+                TAG="green"
+            fi
+
+            echo "export VERSION='$VERSION'" >> deploy.env
+            echo "export TAG='$TAG'" >> deploy.env
+
+  load_deploy_info:
+    description: "Load deployment info into environment"
+    steps:
+      - run:
+          name: Load deploy info
+          command: |
+            cat deploy.env >> $BASH_ENV
+
+jobs:
+  # =================================================================
+  # DEPLOYMENT JOB WITH FULL STATUS TRACKING
+  # =================================================================
+  # This job demonstrates full deployment lifecycle tracking:
+  # Plan -> Deploy -> RUNNING -> SUCCESS/FAILED
+  # =================================================================
+  deploy-with-status:
+    docker:
+      - image: cimg/base:current
+    environment:
+      # Update these values for your deployment
+      DEPLOY_NAME: my-deploy           # Unique name for this deployment
+      ENVIRONMENT_NAME: production     # Environment name in CircleCI
+      COMPONENT_NAME: my-application   # Component name shown in UI
+    steps:
+      - checkout
+      - generate_deploy_info
+      - load_deploy_info
+      
+      # Step 1: Plan the deployment
+      # This creates a deployment record in CircleCI with "planned" status
+      - run:
+          name: Plan deployment
+          command: |
+            circleci run release plan $DEPLOY_NAME \
+              --environment-name=$ENVIRONMENT_NAME \
+              --component-name=$COMPONENT_NAME \
+              --target-version=$VERSION
+      
+      # Step 2: Execute your deployment
+      # Replace this with your actual deployment commands
+      - run:
+          name: Deploy application
+          command: |
+            echo "Deploying $COMPONENT_NAME version $VERSION to $ENVIRONMENT_NAME..."
+            
+            # =====================================================
+            # ADD YOUR DEPLOYMENT COMMANDS HERE
+            # Examples:
+            # - kubectl apply -f manifests/
+            # - aws ecs update-service ...
+            # - terraform apply
+            # - ansible-playbook deploy.yml
+            # - ./deploy.sh
+            # =====================================================
+            
+            echo "Deployment commands completed"
+      
+      # Step 3: Update status to RUNNING
+      # This indicates the deployment is in progress
+      - run:
+          name: Update status to RUNNING
+          command: |
+            circleci run release update $DEPLOY_NAME --status=RUNNING
+      
+      # Step 4: Validate the deployment
+      # Replace with your actual validation/health check logic
+      - run:
+          name: Validate deployment
+          command: |
+            echo "Validating deployment..."
+            
+            # =====================================================
+            # ADD YOUR VALIDATION COMMANDS HERE
+            # Examples:
+            # - curl -f https://myapp.example.com/health
+            # - kubectl rollout status deployment/my-app
+            # - ./smoke-tests.sh
+            # =====================================================
+            
+            # If validation fails, save a reason for the failure
+            # if ! ./health_check.sh; then
+            #   echo "FAILURE_REASON='Health check failed'" > failure_reason.env
+            #   exit 1
+            # fi
+            
+            echo "Validation completed successfully"
+      
+      # Step 5a: Mark as SUCCESS (runs only if all previous steps succeeded)
+      - run:
+          name: Update deployment to SUCCESS
+          command: |
+            circleci run release update $DEPLOY_NAME --status=SUCCESS
+          when: on_success
+      
+      # Step 5b: Mark as FAILED (runs only if any step failed)
+      - run:
+          name: Update deployment to FAILED
+          command: |
+            if [ -f failure_reason.env ]; then
+              source failure_reason.env
+            fi
+            circleci run release update $DEPLOY_NAME \
+              --status=FAILED \
+              --failure-reason="${FAILURE_REASON:-Deployment failed}"
+          when: on_fail
+
+  # =================================================================
+  # SIMPLE DEPLOYMENT JOB (LOGGING ONLY)
+  # =================================================================
+  # This job demonstrates simple deployment logging without status tracking.
+  # Use this when you just want to log that a deployment happened.
+  # =================================================================
+  deploy-simple:
+    docker:
+      - image: cimg/base:current
+    environment:
+      ENVIRONMENT_NAME: production
+      COMPONENT_NAME: my-application
+    steps:
+      - checkout
+      - generate_deploy_info
+      - load_deploy_info
+      
+      # Execute your deployment
+      - run:
+          name: Deploy application
+          command: |
+            echo "Deploying version $VERSION..."
+            # Add your deployment commands here
+      
+      # Log the deployment (single command, no status tracking)
+      - run:
+          name: Log deployment
+          command: |
+            circleci run release log \
+              --environment-name=$ENVIRONMENT_NAME \
+              --component-name=$COMPONENT_NAME \
+              --target-version=$VERSION
+
+  # =================================================================
+  # CANCEL HANDLER JOB
+  # =================================================================
+  # This job runs only when the deploy job is canceled
+  # =================================================================
+  cancel-deploy:
+    docker:
+      - image: cimg/base:current
+    environment:
+      DEPLOY_NAME: my-deploy
+    steps:
+      - run:
+          name: Update deployment to CANCELED
+          command: |
+            circleci run release update $DEPLOY_NAME --status=CANCELED
+
+workflows:
+  # =================================================================
+  # WORKFLOW WITH FULL STATUS TRACKING
+  # =================================================================
+  deploy-with-tracking:
+    jobs:
+      - deploy-with-status:
+          filters:
+            branches:
+              only: main
+      - cancel-deploy:
+          requires:
+            - deploy-with-status:
+              - canceled
+
+  # =================================================================
+  # SIMPLE DEPLOYMENT WORKFLOW
+  # =================================================================
+  # Uncomment to use simple logging instead of full status tracking
+  # =================================================================
+  # deploy-simple-workflow:
+  #   jobs:
+  #     - deploy-simple:
+  #         filters:
+  #           branches:
+  #             only: main
+
